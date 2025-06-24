@@ -1,0 +1,19 @@
+[package]
+authors = ["Mozilla/DISCO <disco-team@mozilla.com>"]
+name = "moz-merino-ext"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "moz_merino_ext"
+crate-type = ["cdylib", "rlib",]
+
+[dependencies]
+pyo3 = { version = "0.25.0", features = ["extension-module", "abi3-py313"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[profile.release]
+opt-level = 3
+lto = "thin"      # PyO3 specific settings
+codegen-units = 1
