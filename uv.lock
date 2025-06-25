@@ -41,7 +41,7 @@ wheels = [
 ]
 
 [[package]]
-name = "moz-merino-ext"
+name = "mozilla-merino-ext"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
