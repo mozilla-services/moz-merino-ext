@@ -24,12 +24,12 @@ ruff-fmt: $(INSTALL_STAMP)  ##  Run ruff format checker
 ruff-format: $(INSTALL_STAMP)  ##  Run ruff format
 	$(UV) run ruff format $(APP_AND_TEST_DIRS)
 
-.PHONY: lint
-lint: $(INSTALL_STAMP) ruff-lint ruff-fmt ##  Run various linters
-
 .PHONY: cargo-fmt
-cargo-fmt: $(INSTALL_STAMP)  ##  Run ruff format checker
-	$(CARGO) fmt --all
+cargo-fmt: $(INSTALL_STAMP)  ##  Run cargo fmt checker
+	$(CARGO) fmt --all --check
+
+.PHONY: lint
+lint: $(INSTALL_STAMP) ruff-lint ruff-fmt cargo-fmt ##  Run various linters
 
 .PHONY: dev
 dev: $(INSTALL_STAMP)  ## Run maturin develop

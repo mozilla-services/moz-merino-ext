@@ -1,6 +1,6 @@
 [package]
 authors = ["Mozilla/DISCO <disco-team@mozilla.com>"]
-name = "moz-merino-ext"
+name = "mozilla-merino-ext"
 version = "0.1.0"
 edition = "2024"
 

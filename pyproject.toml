@@ -1,5 +1,5 @@
 [project]
-name = "moz-merino-ext"
+name = "mozilla-merino-ext"
 version = "0.1.0"
 requires-python = "~=3.13"
 license = { text = "MPL-2.0" }

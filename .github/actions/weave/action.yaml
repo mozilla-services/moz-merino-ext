@@ -1,0 +1,15 @@
+name: Set Up to Run
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v4
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+      with:
+          enable-cache: true
+    - uses: actions/setup-python@v5
+      with:
+        python-version-file: "pyproject.toml"
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+          components: rustfmt

@@ -1,0 +1,10 @@
+name: PR-workflow
+
+on:
+  pull_request:
+
+jobs:
+  run-checks:
+    uses: ./.github/workflows/checks.yaml
+  run-tests:
+    uses: ./.github/workflows/tests.yaml
