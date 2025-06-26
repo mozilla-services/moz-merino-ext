@@ -21,8 +21,7 @@ pub struct OriginalAmp {
     pub iab_category: String,
     pub click_url: String,
     pub impression_url: String,
-    #[serde(rename = "icon")]
-    pub icon_id: String,
+    pub icon: String,
 }
 
 /// Common result structure
