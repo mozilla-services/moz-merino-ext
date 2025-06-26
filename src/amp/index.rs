@@ -141,6 +141,10 @@ impl AmpIndexer for BTreeAmpIndex {
         m.insert("icons_count".into(), self.icons.len());
         m
     }
+
+    fn list_icons(&self) -> Vec<String> {
+        self.icons.values().cloned().collect::<_>()
+    }
 }
 
 impl BTreeAmpIndex {

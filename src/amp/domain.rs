@@ -78,6 +78,9 @@ pub trait AmpIndexer {
 
     /// Get statistics about the index
     fn stats(&self) -> HashMap<String, usize>;
+
+    /// List the icons of the index
+    fn list_icons(&self) -> Vec<String>;
 }
 
 /// Dictionary encoding for URLs
