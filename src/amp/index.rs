@@ -1,5 +1,6 @@
 use crate::amp::domain::{
-    AmpIndexer, AmpResult, FullKeyword, OriginalAmp, collapse_keywords, extract_template,
+    AmpIndexer, AmpResult, FullKeyword, OriginalAmp, collapse_keywords, dictionary_encode,
+    extract_template,
 };
 use std::collections::{BTreeMap, HashMap};
 use std::ops::Bound::{Included, Unbounded};
@@ -17,7 +18,7 @@ struct AmpSuggestion {
     advertiser_id: u32,
     block_id: i32,
     iab: String,
-    icon_id: String,
+    icon_id: u32,
 }
 
 pub struct BTreeAmpIndex {
@@ -28,7 +29,7 @@ pub struct BTreeAmpIndex {
     url_templates: HashMap<u32, String>,
     click_templates: HashMap<u32, String>,
     imp_templates: HashMap<u32, String>,
-    icons: HashMap<String, String>,
+    icons: HashMap<u32, String>,
 }
 
 impl AmpIndexer for BTreeAmpIndex {
@@ -49,17 +50,13 @@ impl AmpIndexer for BTreeAmpIndex {
         let mut url_lookup = HashMap::new();
         let mut click_lookup = HashMap::new();
         let mut imp_lookup = HashMap::new();
+        let mut icon_lookup = HashMap::new();
 
         for amp in amps {
-            // Internal advertiser
-            let adv_id = if let Some(&id) = adv_lookup.get(&amp.advertiser) {
-                id
-            } else {
-                let id = adv_lookup.len() as u32;
-                adv_lookup.insert(amp.advertiser.clone(), id);
-                self.advertisers.insert(id, amp.advertiser.clone());
-                id
-            };
+            // Internal advertiser ID.
+            let adv_id = dictionary_encode(&amp.advertiser, &mut adv_lookup, &mut self.advertisers);
+            // Internal icon ID.
+            let icon_id = dictionary_encode(&amp.icon, &mut icon_lookup, &mut self.icons);
 
             // Templatize URLs
             let (url_tid, url_suf) =
@@ -85,13 +82,8 @@ impl AmpIndexer for BTreeAmpIndex {
                 advertiser_id: adv_id,
                 block_id: amp.block_id,
                 iab: amp.iab_category.clone(),
-                icon_id: amp.icon_id.clone(),
+                icon_id,
             });
-
-            // Internal icon
-            self.icons
-                .entry(amp.icon_id.clone())
-                .or_insert_with(|| amp.icon_id.to_string());
 
             // Collapse each chain on keyword partials
             for (kw, min_pref, fw) in
@@ -140,6 +132,10 @@ impl AmpIndexer for BTreeAmpIndex {
         m.insert("url_templates_count".into(), self.url_templates.len());
         m.insert("icons_count".into(), self.icons.len());
         m
+    }
+
+    fn list_icons(&self) -> Vec<String> {
+        self.icons.values().cloned().collect::<_>()
     }
 }
 

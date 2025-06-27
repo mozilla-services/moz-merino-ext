@@ -115,8 +115,8 @@ def test_build_from_invalid_value(idxmgr: AmpIndexManager, amp_data: AMP_DATA_TY
 
 def test_delete_index(idxmgr: AmpIndexManager, amp_data: AMP_DATA_TYPE) -> None:
     """Test `delete` of the index manager."""
-    idxmgr.build("us/desktop", json.dumps(amp_data))
-    idxmgr.delete("us/desktop")
+    idxmgr.build(IDX_NAME, json.dumps(amp_data))
+    idxmgr.delete(IDX_NAME)
 
     assert len(idxmgr.list()) == 0
 
@@ -125,7 +125,7 @@ def test_query_index(idxmgr: AmpIndexManager, amp_data: AMP_DATA_TYPE) -> None:
     """Test `query` of the index manager."""
     idxmgr.build(IDX_NAME, json.dumps(amp_data))
 
-    suggestions: list[PyAmpResult] = idxmgr.query("us/desktop", "a missing keyword")
+    suggestions: list[PyAmpResult] = idxmgr.query(IDX_NAME, "a missing keyword")
 
     assert len(suggestions) == 0
 
@@ -136,8 +136,27 @@ def test_query_index(idxmgr: AmpIndexManager, amp_data: AMP_DATA_TYPE) -> None:
             )
         )
         for i, keyword in enumerate(expected["keywords"]):
-            suggestions: list[PyAmpResult] = idxmgr.query("us/desktop", keyword)
+            suggestions: list[PyAmpResult] = idxmgr.query(IDX_NAME, keyword)
 
             assert len(suggestions) == 1
             assert_suggestion(expected, suggestions[0])
             assert suggestions[0].full_keyword == full_keywords[i]
+
+
+def test_list_icons(idxmgr: AmpIndexManager, amp_data: AMP_DATA_TYPE) -> None:
+    """Test `delete` of the index manager."""
+    idxmgr.build(IDX_NAME, json.dumps(amp_data))
+
+    assert set(idxmgr.list_icons(IDX_NAME)) == set(data["icon"] for data in amp_data)
+
+
+def test_stats(idxmgr: AmpIndexManager, amp_data: AMP_DATA_TYPE) -> None:
+    """Test `delete` of the index manager."""
+    idxmgr.build(IDX_NAME, json.dumps(amp_data))
+    stats = idxmgr.stats(IDX_NAME)
+
+    assert stats["keyword_index_size"] > 0
+    assert stats["suggestions_count"] == len(amp_data)
+    assert stats["advertisers_count"] == len(set(data["advertiser"] for data in amp_data))
+    assert stats["url_templates_count"] > 0
+    assert stats["icons_count"] == len(set(data["icon"] for data in amp_data))
