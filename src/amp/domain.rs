@@ -83,9 +83,9 @@ pub trait AmpIndexer {
 }
 
 /// Dictionary encoding for URLs
-pub fn extract_template(
-    url: &str,
-    template_lookup: &mut HashMap<String, u32>,
+pub fn extract_template<'a>(
+    url: &'a str,
+    template_lookup: &mut HashMap<&'a str, u32>,
     templates: &mut HashMap<u32, String>,
 ) -> (u32, String) {
     let split_idx = url.find('?').unwrap_or_else(|| url.rfind('/').unwrap_or(0));
@@ -95,10 +95,28 @@ pub fn extract_template(
         Some(&id) => (id, suffix.to_string()),
         None => {
             let id = template_lookup.len() as u32;
-            template_lookup.insert(template.to_string(), id);
+            template_lookup.insert(template, id);
             templates.insert(id, template.to_string());
             (id, suffix.to_string())
         }
+    }
+}
+
+/// A dictionary encoder that inserts a `needle` into the `haystack` (i.e. the dictionary)
+/// and the auxiliary lookup table. It returns an integer identifier from the lookup table
+/// for the `needle`.
+pub fn dictionary_encode<'a>(
+    needle: &'a str,
+    lookup_tbl: &mut HashMap<&'a str, u32>,
+    haystack: &mut HashMap<u32, String>,
+) -> u32 {
+    if let Some(&id) = lookup_tbl.get(needle) {
+        id
+    } else {
+        let id = lookup_tbl.len() as u32;
+        lookup_tbl.insert(needle, id);
+        haystack.insert(id, needle.to_owned());
+        id
     }
 }
 

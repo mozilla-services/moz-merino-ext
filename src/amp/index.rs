@@ -1,5 +1,6 @@
 use crate::amp::domain::{
-    AmpIndexer, AmpResult, FullKeyword, OriginalAmp, collapse_keywords, extract_template,
+    AmpIndexer, AmpResult, FullKeyword, OriginalAmp, collapse_keywords, dictionary_encode,
+    extract_template,
 };
 use std::collections::{BTreeMap, HashMap};
 use std::ops::Bound::{Included, Unbounded};
@@ -31,23 +32,6 @@ pub struct BTreeAmpIndex {
     icons: HashMap<u32, String>,
 }
 
-/// A helper to insert a `needle` into the `haystack` and the lookup table
-/// and then return an integer identifier from the lookup table for the `needle`.
-fn lookup_helper(
-    needle: &str,
-    lookup_tbl: &mut HashMap<String, u32>,
-    haystack: &mut HashMap<u32, String>,
-) -> u32 {
-    if let Some(&id) = lookup_tbl.get(needle) {
-        id
-    } else {
-        let id = lookup_tbl.len() as u32;
-        lookup_tbl.insert(needle.to_owned(), id);
-        haystack.insert(id, needle.to_owned());
-        id
-    }
-}
-
 impl AmpIndexer for BTreeAmpIndex {
     fn new() -> Self {
         BTreeAmpIndex {
@@ -70,9 +54,9 @@ impl AmpIndexer for BTreeAmpIndex {
 
         for amp in amps {
             // Internal advertiser ID.
-            let adv_id = lookup_helper(&amp.advertiser, &mut adv_lookup, &mut self.advertisers);
+            let adv_id = dictionary_encode(&amp.advertiser, &mut adv_lookup, &mut self.advertisers);
             // Internal icon ID.
-            let icon_id = lookup_helper(&amp.icon, &mut icon_lookup, &mut self.icons);
+            let icon_id = dictionary_encode(&amp.icon, &mut icon_lookup, &mut self.icons);
 
             // Templatize URLs
             let (url_tid, url_suf) =
