@@ -162,6 +162,40 @@ impl AmpIndexManager {
         let indexes = self.indexes.read().unwrap();
         indexes.contains_key(index_name)
     }
+
+    /// List all the icons of a given index.
+    /// Args:
+    ///   - `index_name`: the index name.
+    /// Returns:
+    ///   - A vector of icon IDs.
+    /// Errors:
+    ///   - `KeyError` if the given index is missing.
+    #[pyo3(signature = (index_name, /))]
+    fn list_icons(&self, index_name: &str) -> PyResult<Vec<String>> {
+        let indexes = self.indexes.read().unwrap();
+        let index = indexes
+            .get(index_name)
+            .ok_or_else(|| PyKeyError::new_err(format!("Index '{}' not found", index_name)))?;
+
+        Ok(index.list_icons())
+    }
+
+    /// Fetch index stats for a given index.
+    /// Args:
+    ///   - `index_name`: the index name.
+    /// Returns:
+    ///   - A stats dictionary.
+    /// Errors:
+    ///   - `KeyError` if the given index is missing.
+    #[pyo3(signature = (index_name, /))]
+    fn stats(&self, index_name: &str) -> PyResult<HashMap<String, usize>> {
+        let indexes = self.indexes.read().unwrap();
+        let index = indexes
+            .get(index_name)
+            .ok_or_else(|| PyKeyError::new_err(format!("Index '{}' not found", index_name)))?;
+
+        Ok(index.stats())
+    }
 }
 
 /// Submodule for the "amp" extension.
