@@ -32,14 +32,14 @@ jobs:
         with:
           python-version-file: "pyproject.toml"
       - name: Build wheels
-        uses: PyO3/maturin-action@v1
+        uses: PyO3/maturin-action@v1.49.3
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: auto
       - name: Build free-threaded wheels
-        uses: PyO3/maturin-action@v1
+        uses: PyO3/maturin-action@v1.49.3
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist -i python3.13t
@@ -64,14 +64,14 @@ jobs:
         with:
           python-version-file: "pyproject.toml"
       - name: Build wheels
-        uses: PyO3/maturin-action@v1
+        uses: PyO3/maturin-action@v1.49.3
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: musllinux_1_2
       - name: Build free-threaded wheels
-        uses: PyO3/maturin-action@v1
+        uses: PyO3/maturin-action@v1.49.3
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist -i python3.13t
@@ -97,7 +97,7 @@ jobs:
           python-version-file: "pyproject.toml"
           architecture: ${{ matrix.platform.target }}
       - name: Build wheels
-        uses: PyO3/maturin-action@v1
+        uses: PyO3/maturin-action@v1.49.3
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist
@@ -107,7 +107,7 @@ jobs:
           python-version: 3.13t
           architecture: ${{ matrix.platform.target }}
       - name: Build free-threaded wheels
-        uses: PyO3/maturin-action@v1
+        uses: PyO3/maturin-action@v1.49.3
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist -i python3.13t
@@ -133,13 +133,13 @@ jobs:
         with:
           python-version-file: "pyproject.toml"
       - name: Build wheels
-        uses: PyO3/maturin-action@v1
+        uses: PyO3/maturin-action@v1.49.3
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
       - name: Build free-threaded wheels
-        uses: PyO3/maturin-action@v1
+        uses: PyO3/maturin-action@v1.49.3
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist -i python3.13t
@@ -155,7 +155,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build sdist
-        uses: PyO3/maturin-action@v1
+        uses: PyO3/maturin-action@v1.49.3
         with:
           command: sdist
           args: --out dist
@@ -180,7 +180,7 @@ jobs:
       - uses: actions/download-artifact@v4
       - name: Publish to PyPI
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
-        uses: PyO3/maturin-action@v1
+        uses: PyO3/maturin-action@v1.49.3
         with:
           command: upload
           args: --non-interactive --skip-existing wheels-*/*
