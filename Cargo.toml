@@ -3,6 +3,10 @@ authors = ["Mozilla/DISCO <disco-team@mozilla.com>"]
 name = "mozilla-merino-ext"
 version = "0.1.0"
 edition = "2024"
+license = "MPL"
+repository = "https://github.com/mozilla-services/moz-merino-ext"
+keywords = ["mozilla", "merino", "python"]
+readme = "README.md"
 
 [lib]
 name = "moz_merino_ext"
