@@ -8,6 +8,7 @@ mod amp;
 /// Python extensions for Mozilla/Merino implemented in Rust using PyO3.
 #[pymodule]
 fn moz_merino_ext(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add_wrapped(wrap_pymodule!(amp::submodule))?;
 
     // Inserting to sys.modules allows importing submodules nicely from Python

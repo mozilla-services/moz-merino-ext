@@ -1,7 +1,7 @@
 [project]
 name = "mozilla-merino-ext"
 version = "0.1.0"
-requires-python = "~=3.13"
+requires-python = "~=3.13.0"
 license = { text = "MPL-2.0" }
 dependencies = [
     "maturin>=1.8.7",
@@ -26,6 +26,7 @@ build-backend = "maturin"
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
+python-source = "python"
 
 [tool.ruff]
 line-length = 99
