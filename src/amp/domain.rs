@@ -25,7 +25,7 @@ pub struct OriginalAmp {
 }
 
 /// Common result structure
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct AmpResult {
     pub title: String,
     pub url: String,
@@ -181,4 +181,82 @@ pub(crate) fn load_amp_data<P: AsRef<Path>>(path: P) -> Result<Vec<OriginalAmp>,
     let reader = BufReader::new(file);
     let amps = serde_json::from_reader(reader)?;
     Ok(amps)
+}
+
+#[cfg(test)]
+mod test {
+    use std::collections::HashMap;
+
+    use crate::amp::domain::{FullKeyword, collapse_keywords, dictionary_encode, extract_template};
+
+    #[test]
+    fn test_extract_template_with_query_param() {
+        let mut template_lookup = HashMap::new();
+        let mut templates = HashMap::new();
+        let url = "https://example.com/path?param=hello";
+        let (id, suffix) = extract_template(url, &mut template_lookup, &mut templates);
+
+        assert_eq!(id, 0);
+        assert_eq!(suffix, "?param=hello");
+        assert_eq!(templates.get(&id).unwrap(), "https://example.com/path");
+    }
+
+    #[test]
+    fn test_extract_template_with_slash() {
+        let mut template_lookup = HashMap::new();
+        let mut templates = HashMap::new();
+        let url = "https://example.com/path/hello";
+        let (id, suffix) = extract_template(url, &mut template_lookup, &mut templates);
+
+        assert_eq!(id, 0);
+        assert_eq!(suffix, "/hello");
+        assert_eq!(templates.get(&id).unwrap(), "https://example.com/path");
+    }
+    #[test]
+    fn test_dictionary_encode() {
+        let mut lookup_tbl = HashMap::new();
+        let mut haystack = HashMap::new();
+
+        let id1 = dictionary_encode("needle", &mut lookup_tbl, &mut haystack);
+        let id2 = dictionary_encode("safetypin", &mut lookup_tbl, &mut haystack);
+        assert_eq!(id1, 0);
+        assert_eq!(id2, 1);
+        assert_eq!(haystack.get(&id1).unwrap(), "needle");
+        assert_eq!(haystack.get(&id2).unwrap(), "safetypin");
+    }
+
+    #[test]
+    fn test_dictionary_encode_duplicates() {
+        let mut lookup_tbl = HashMap::new();
+        let mut haystack = HashMap::new();
+
+        let id1 = dictionary_encode("needle", &mut lookup_tbl, &mut haystack);
+        let _ = dictionary_encode("safetypin", &mut lookup_tbl, &mut haystack);
+        let dupe = dictionary_encode("needle", &mut lookup_tbl, &mut haystack);
+        assert_eq!(id1, 0);
+        assert_eq!(dupe, 0)
+    }
+
+    #[test]
+    fn test_collapse_keywords() {
+        let keywords = vec![
+            "mer".to_string(),
+            "meri".to_string(),
+            "merin".to_string(),
+            "merino".to_string(),
+            "amp".to_string(),
+        ];
+        let full_keywords = vec![("mer".to_string(), 7), ("amp".to_string(), 4)];
+        let expected = vec![
+            ("merino".to_string(), 3, FullKeyword::Same),
+            ("amp".to_string(), 3, FullKeyword::Same),
+        ];
+
+        let collapsed = collapse_keywords(&keywords, &full_keywords);
+        assert_eq!(collapsed.len(), 2);
+        for ((actual_kw, actual_len, _), (exp_kw, exp_len, _)) in collapsed.iter().zip(expected) {
+            assert_eq!(*actual_kw, exp_kw);
+            assert_eq!(*actual_len, exp_len);
+        }
+    }
 }
