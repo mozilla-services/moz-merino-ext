@@ -28,6 +28,10 @@ ruff-format: $(INSTALL_STAMP)  ##  Run ruff format
 cargo-fmt: $(INSTALL_STAMP)  ##  Run cargo fmt checker
 	$(CARGO) fmt --all --check
 
+.PHONY: cargo-test
+cargo-test: $(INSTALL_STAMP)  ##  Run cargo fmt checker
+	$(CARGO) test
+
 .PHONY: lint
 lint: $(INSTALL_STAMP) ruff-lint ruff-fmt cargo-fmt ##  Run various linters
 

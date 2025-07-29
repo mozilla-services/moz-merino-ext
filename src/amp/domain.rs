@@ -212,6 +212,7 @@ mod test {
         assert_eq!(suffix, "/hello");
         assert_eq!(templates.get(&id).unwrap(), "https://example.com/path");
     }
+
     #[test]
     fn test_dictionary_encode() {
         let mut lookup_tbl = HashMap::new();

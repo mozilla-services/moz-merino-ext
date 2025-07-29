@@ -222,6 +222,12 @@ mod test {
         let suggestion = &result[0];
         assert_eq!(suggestion.title, amp.title);
         assert_eq!(suggestion.advertiser, amp.advertiser);
+        assert_eq!(suggestion.url, amp.url);
+        assert_eq!(suggestion.block_id, amp.block_id);
+        assert_eq!(suggestion.iab_category, amp.iab_category);
+        assert_eq!(suggestion.click_url, amp.click_url);
+        assert_eq!(suggestion.impression_url, amp.impression_url);
+        assert_eq!(suggestion.icon, amp.icon);
     }
 
     #[test]
