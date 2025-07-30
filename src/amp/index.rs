@@ -178,3 +178,122 @@ impl BTreeAmpIndex {
             .map_or_else(|| suffix.to_string(), |t| format!("{}{}", t, suffix))
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::amp::{
+        domain::{AmpIndexer, AmpResult, FullKeyword, OriginalAmp},
+        index::BTreeAmpIndex,
+    };
+
+    fn test_amp_fixture() -> OriginalAmp {
+        OriginalAmp {
+            keywords: vec![
+                "los".to_string(),
+                "los p".to_string(),
+                "los pollos".to_string(),
+                "los pollos h".to_string(),
+                "los pollos hermanos".to_string(),
+            ],
+            title: "Los Pollos Hermanos - Albuquerque".to_string(),
+            url: "https://www.lph-nm.biz".to_string(),
+            score: Some(0.3),
+            full_keywords: vec![
+                ("los pollos".to_string(), 4),
+                ("los pollos hermanos".to_string(), 2),
+            ],
+            advertiser: "Los Pollos Hermanos".to_string(),
+            block_id: 1,
+            iab_category: "8 - Food & Drink".to_string(),
+            click_url: "https://example.com/click_url".to_string(),
+            impression_url: "https://example.com/impression_url".to_string(),
+            icon: "https://example.com/icon".to_string(),
+        }
+    }
+
+    #[test]
+    fn test_build_and_query() {
+        let amp = test_amp_fixture();
+        let mut index = BTreeAmpIndex::new();
+        index.build(&[amp.clone()]).unwrap();
+
+        let result = index.query("los pollos hermanos").unwrap();
+        assert_eq!(result.len(), 1);
+        let suggestion = &result[0];
+        assert_eq!(suggestion.title, amp.title);
+        assert_eq!(suggestion.advertiser, amp.advertiser);
+        assert_eq!(suggestion.url, amp.url);
+        assert_eq!(suggestion.block_id, amp.block_id);
+        assert_eq!(suggestion.iab_category, amp.iab_category);
+        assert_eq!(suggestion.click_url, amp.click_url);
+        assert_eq!(suggestion.impression_url, amp.impression_url);
+        assert_eq!(suggestion.icon, amp.icon);
+    }
+
+    #[test]
+    fn test_query_with_no_matches() {
+        let amp = test_amp_fixture();
+        let mut index = BTreeAmpIndex::new();
+        index.build(&[amp]).unwrap();
+
+        let results = index.query("abc").unwrap();
+        assert!(results.is_empty());
+    }
+
+    #[test]
+    fn test_stats() {
+        let amp = test_amp_fixture();
+        let mut index = BTreeAmpIndex::new();
+        index.build(&[amp]).unwrap();
+
+        let stats = index.stats();
+        assert_eq!(stats["keyword_index_size"], 5);
+        assert_eq!(stats["suggestions_count"], 1);
+        assert_eq!(stats["advertisers_count"], 1);
+        assert_eq!(stats["url_templates_count"], 1);
+        assert_eq!(stats["icons_count"], 1);
+    }
+
+    #[test]
+    fn test_list_icons() {
+        let amp = test_amp_fixture();
+        let mut index = BTreeAmpIndex::new();
+        index.build(&[amp.clone()]).unwrap();
+
+        let icons = index.list_icons();
+        assert_eq!(icons.len(), 1);
+        assert_eq!(icons[0], amp.icon);
+    }
+
+    #[test]
+    fn test_build_result_format() {
+        let amp = test_amp_fixture();
+        let mut index = BTreeAmpIndex::new();
+        index.build(&[amp.clone()]).unwrap();
+
+        let mut results = Vec::new();
+        index
+            .build_result(
+                "los",
+                0,
+                &FullKeyword::Different("los pollos".to_string()),
+                &mut results,
+            )
+            .unwrap();
+
+        assert_eq!(results.len(), 1);
+        let expected = AmpResult {
+            title: amp.title.clone(),
+            url: amp.url.clone(),
+            click_url: amp.click_url.clone(),
+            impression_url: amp.impression_url.clone(),
+            advertiser: amp.advertiser.clone(),
+            block_id: amp.block_id,
+            iab_category: amp.iab_category.clone(),
+            icon: amp.icon.clone(),
+            full_keyword: "los pollos".to_string(),
+        };
+
+        assert_eq!(results[0], expected);
+    }
+}
