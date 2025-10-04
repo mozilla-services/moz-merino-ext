@@ -46,6 +46,7 @@ def amp_data() -> AMP_DATA_TYPE:
             "id": 100,
             "advertiser": "Los Pollos Hermanos",
             "iab_category": "8 - Food & Drink",
+            "serp_categories": [0],
             "keywords": [
                 "lo",
                 "los",

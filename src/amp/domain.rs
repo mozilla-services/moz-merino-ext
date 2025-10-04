@@ -22,6 +22,7 @@ pub struct OriginalAmp {
     pub click_url: String,
     pub impression_url: String,
     pub icon: String,
+    pub serp_categories: Vec<i32>,
 }
 
 /// Common result structure
@@ -36,6 +37,7 @@ pub struct AmpResult {
     pub iab_category: String,
     pub icon: String,
     pub full_keyword: String,
+    pub serp_categories: Vec<i32>,
 }
 
 /// Full keyword for each keyword.

@@ -28,6 +28,8 @@ pub struct PyAmpResult {
     #[pyo3(get)]
     pub iab_category: String,
     #[pyo3(get)]
+    pub serp_categories: Vec<i32>,
+    #[pyo3(get)]
     pub icon: String,
     #[pyo3(get)]
     pub full_keyword: String,
@@ -43,6 +45,7 @@ impl From<AmpResult> for PyAmpResult {
             advertiser: result.advertiser,
             block_id: result.block_id,
             iab_category: result.iab_category,
+            serp_categories: result.serp_categories,
             icon: result.icon,
             full_keyword: result.full_keyword,
         }
