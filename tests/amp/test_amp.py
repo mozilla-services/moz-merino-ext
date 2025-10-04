@@ -74,6 +74,7 @@ def amp_data() -> AMP_DATA_TYPE:
             "impression_url": "https://example.com/impression_url",
             "click_url": "https://example.com/click_url",
             "score": 0.3,
+            "serp_categories": [1, 2],
         },
     ]
 
