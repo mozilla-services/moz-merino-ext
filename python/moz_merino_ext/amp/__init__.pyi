@@ -7,6 +7,7 @@ class PyAmpResult:
     advertiser: str
     block_id: int
     iab_category: str
+    serp_categories: list[int]
     icon: str
     full_keyword: str
 
@@ -18,6 +19,7 @@ class PyAmpResult:
                  advertiser: str,
                  block_id: int,
                  iab_category: str,
+                 serp_categories: list[int],
                  icon: str,
                  full_keyword: str): ...
     @property
@@ -34,6 +36,8 @@ class PyAmpResult:
     def block_id(self) -> int: ...
     @property
     def iab_category(self) -> str: ...
+    @property
+    def serp_categories(self) -> list[int]: ...
     @property
     def icon(self) -> str: ...
     @property
