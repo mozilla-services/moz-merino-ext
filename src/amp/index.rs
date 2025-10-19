@@ -19,6 +19,7 @@ struct AmpSuggestion {
     block_id: i32,
     iab: String,
     icon_id: u32,
+    serp_categories: Vec<i32>,
 }
 
 pub struct BTreeAmpIndex {
@@ -83,6 +84,7 @@ impl AmpIndexer for BTreeAmpIndex {
                 block_id: amp.block_id,
                 iab: amp.iab_category.clone(),
                 icon_id,
+                serp_categories: amp.serp_categories.clone(),
             });
 
             // Collapse each chain on keyword partials
@@ -169,6 +171,7 @@ impl BTreeAmpIndex {
             iab_category: sugg.iab.clone(),
             icon,
             full_keyword: full_keyword.full_keyword(keyword),
+            serp_categories: sugg.serp_categories.clone(),
         });
         Ok(())
     }
@@ -208,6 +211,7 @@ mod test {
             click_url: "https://example.com/click_url".to_string(),
             impression_url: "https://example.com/impression_url".to_string(),
             icon: "https://example.com/icon".to_string(),
+            serp_categories: vec![0],
         }
     }
 
@@ -228,6 +232,7 @@ mod test {
         assert_eq!(suggestion.click_url, amp.click_url);
         assert_eq!(suggestion.impression_url, amp.impression_url);
         assert_eq!(suggestion.icon, amp.icon);
+        assert_eq!(suggestion.serp_categories, amp.serp_categories);
     }
 
     #[test]
@@ -292,6 +297,7 @@ mod test {
             iab_category: amp.iab_category.clone(),
             icon: amp.icon.clone(),
             full_keyword: "los pollos".to_string(),
+            serp_categories: vec![0],
         };
 
         assert_eq!(results[0], expected);
