@@ -1,7 +1,7 @@
 [project]
 name = "mozilla-merino-ext"
 version = "0.2.0"
-requires-python = "~=3.14.0"
+requires-python = ">=3.13"
 license = { text = "MPL-2.0" }
 dependencies = [
     "maturin>=1.13.0",
