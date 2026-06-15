@@ -33,6 +33,8 @@ pub struct PyAmpResult {
     pub icon: String,
     #[pyo3(get)]
     pub full_keyword: String,
+    #[pyo3(get)]
+    pub top_pick_prefix: Option<String>,
 }
 
 impl From<AmpResult> for PyAmpResult {
@@ -48,6 +50,7 @@ impl From<AmpResult> for PyAmpResult {
             serp_categories: result.serp_categories,
             icon: result.icon,
             full_keyword: result.full_keyword,
+            top_pick_prefix: result.top_pick_prefix,
         }
     }
 }

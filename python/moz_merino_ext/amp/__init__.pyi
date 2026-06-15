@@ -10,6 +10,7 @@ class PyAmpResult:
     serp_categories: list[int]
     icon: str
     full_keyword: str
+    top_pick_prefix: str | None
 
     def __init__(self,
                  title: str,
@@ -21,7 +22,8 @@ class PyAmpResult:
                  iab_category: str,
                  serp_categories: list[int],
                  icon: str,
-                 full_keyword: str): ...
+                 full_keyword: str,
+                 top_pick_prefix: str | None = None): ...
     @property
     def title(self) -> str: ...
     @property
@@ -42,6 +44,8 @@ class PyAmpResult:
     def icon(self) -> str: ...
     @property
     def full_keyword(self) -> str: ...
+    @property
+    def top_pick_prefix(self) -> str | None: ...
 
 
 class AmpIndexManager:
