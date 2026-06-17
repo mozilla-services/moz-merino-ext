@@ -1,3 +1,10 @@
+<a name="0.3.1"></a>
+## 0.3.1 (2026-06-17)
+
+### Maintenance
+
+* Migrate macOS x86_64 CI runner from retired macos-13 to macos-15-intel
+
 <a name="0.3.0"></a>
 ## 0.3.0 (2026-06-17)
 
