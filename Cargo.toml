@@ -1,7 +1,7 @@
 [package]
 authors = ["Mozilla/DISCO <disco-team@mozilla.com>"]
 name = "mozilla-merino-ext"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 license = "MPL"
 repository = "https://github.com/mozilla-services/moz-merino-ext"
