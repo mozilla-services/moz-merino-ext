@@ -20,6 +20,7 @@ struct AmpSuggestion {
     iab: String,
     icon_id: u32,
     serp_categories: Vec<i32>,
+    top_pick_prefix: Option<String>,
 }
 
 pub struct BTreeAmpIndex {
@@ -85,6 +86,7 @@ impl AmpIndexer for BTreeAmpIndex {
                 iab: amp.iab_category.clone(),
                 icon_id,
                 serp_categories: amp.serp_categories.clone(),
+                top_pick_prefix: amp.top_pick_prefix.clone(),
             });
 
             // Collapse each chain on keyword partials
@@ -172,6 +174,7 @@ impl BTreeAmpIndex {
             icon,
             full_keyword: full_keyword.full_keyword(keyword),
             serp_categories: sugg.serp_categories.clone(),
+            top_pick_prefix: sugg.top_pick_prefix.clone(),
         });
         Ok(())
     }
@@ -212,6 +215,7 @@ mod test {
             impression_url: "https://example.com/impression_url".to_string(),
             icon: "https://example.com/icon".to_string(),
             serp_categories: vec![0],
+            top_pick_prefix: None,
         }
     }
 
@@ -233,6 +237,19 @@ mod test {
         assert_eq!(suggestion.impression_url, amp.impression_url);
         assert_eq!(suggestion.icon, amp.icon);
         assert_eq!(suggestion.serp_categories, amp.serp_categories);
+        assert_eq!(suggestion.top_pick_prefix, amp.top_pick_prefix);
+    }
+
+    #[test]
+    fn test_build_and_query_with_top_pick_prefix() {
+        let mut amp = test_amp_fixture();
+        amp.top_pick_prefix = Some("los".to_string());
+        let mut index = BTreeAmpIndex::new();
+        index.build(&[amp.clone()]).unwrap();
+
+        let result = index.query("los pollos hermanos").unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].top_pick_prefix, Some("los".to_string()));
     }
 
     #[test]
@@ -298,6 +315,7 @@ mod test {
             icon: amp.icon.clone(),
             full_keyword: "los pollos".to_string(),
             serp_categories: vec![0],
+            top_pick_prefix: None,
         };
 
         assert_eq!(results[0], expected);

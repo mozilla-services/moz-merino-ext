@@ -23,6 +23,8 @@ pub struct OriginalAmp {
     pub impression_url: String,
     pub icon: String,
     pub serp_categories: Vec<i32>,
+    #[serde(default)]
+    pub top_pick_prefix: Option<String>,
 }
 
 /// Common result structure
@@ -38,6 +40,7 @@ pub struct AmpResult {
     pub icon: String,
     pub full_keyword: String,
     pub serp_categories: Vec<i32>,
+    pub top_pick_prefix: Option<String>,
 }
 
 /// Full keyword for each keyword.
