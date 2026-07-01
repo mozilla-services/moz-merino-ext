@@ -2,8 +2,13 @@ use crate::amp::domain::{
     AmpIndexer, AmpResult, FullKeyword, OriginalAmp, collapse_keywords, dictionary_encode,
     extract_template,
 };
-use std::collections::{BTreeMap, HashMap};
+use crate::amp::sym::SymIndex;
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::ops::Bound::{Included, Unbounded};
+
+/// Minimum keyword/query length for fuzzy matching (plan `min_candidate_len`).
+/// Short queries generate too many noisy ED1 neighbours, so they're excluded.
+const FUZZY_MIN_LEN: usize = 5;
 
 /// Optimized AMP suggestion for storage
 #[derive(Clone)]
@@ -32,6 +37,10 @@ pub struct BTreeAmpIndex {
     click_templates: HashMap<u32, String>,
     imp_templates: HashMap<u32, String>,
     icons: HashMap<u32, String>,
+    /// Edit-distance-1 delete index over full keywords, for fuzzy rescue.
+    sym: SymIndex,
+    /// All distinct full keywords (any length), for the normalization canonical.
+    full_keywords: Vec<String>,
 }
 
 impl AmpIndexer for BTreeAmpIndex {
@@ -44,6 +53,8 @@ impl AmpIndexer for BTreeAmpIndex {
             click_templates: HashMap::new(),
             imp_templates: HashMap::new(),
             icons: HashMap::new(),
+            sym: SymIndex::default(),
+            full_keywords: Vec::new(),
         }
     }
 
@@ -53,6 +64,7 @@ impl AmpIndexer for BTreeAmpIndex {
         let mut click_lookup = HashMap::new();
         let mut imp_lookup = HashMap::new();
         let mut icon_lookup = HashMap::new();
+        let mut fk_seen: HashSet<String> = HashSet::new();
 
         for amp in amps {
             // Internal advertiser ID.
@@ -95,9 +107,21 @@ impl AmpIndexer for BTreeAmpIndex {
             {
                 self.keyword_index.insert(kw, (idx, min_pref, fw));
             }
+
+            // Collect distinct full keywords (all lengths) for the canonical + fuzzy index.
+            for (fk, _count) in &amp.full_keywords {
+                if fk_seen.insert(fk.clone()) {
+                    self.full_keywords.push(fk.clone());
+                }
+            }
         }
 
         self.suggestions.shrink_to_fit();
+        self.full_keywords.shrink_to_fit();
+
+        // Build the ED1 fuzzy delete index from full keywords >= FUZZY_MIN_LEN chars.
+        let sym = SymIndex::build(self.full_keywords.iter().cloned(), FUZZY_MIN_LEN);
+        self.sym = sym;
 
         Ok(())
     }
@@ -135,6 +159,9 @@ impl AmpIndexer for BTreeAmpIndex {
         m.insert("advertisers_count".into(), self.advertisers.len());
         m.insert("url_templates_count".into(), self.url_templates.len());
         m.insert("icons_count".into(), self.icons.len());
+        m.insert("full_keywords_count".into(), self.full_keywords.len());
+        m.insert("fuzzy_keywords_count".into(), self.sym.len());
+        m.insert("fuzzy_delete_index_size".into(), self.sym.delete_index_len());
         m
     }
 
@@ -182,6 +209,31 @@ impl BTreeAmpIndex {
     fn reconstruct(dict: &HashMap<u32, String>, tid: u32, suffix: &str) -> String {
         dict.get(&tid)
             .map_or_else(|| suffix.to_string(), |t| format!("{}{}", t, suffix))
+    }
+
+    /// Fuzzy (edit-distance-1) fallback. For each ED1 keyword neighbour of
+    /// `query`, resolve it back through the prefix index to full results.
+    /// Intended to run only on an exact miss in a fuzzy-enabled request
+    pub fn query_fuzzy(&self, query: &str) -> Result<Vec<AmpResult>, Box<dyn std::error::Error>> {
+        if self.sym.is_empty() {
+            return Ok(Vec::new());
+        }
+        let mut out = Vec::new();
+        let mut seen_blocks: HashSet<i32> = HashSet::new();
+        for candidate in self.sym.query_delete_index(query) {
+            for res in self.query(&candidate)? {
+                if seen_blocks.insert(res.block_id) {
+                    out.push(res);
+                }
+            }
+        }
+        Ok(out)
+    }
+
+    /// All distinct full keywords (any length) — the source for the AMP slice of
+    /// the normalization canonical.
+    pub fn full_keywords(&self) -> Vec<String> {
+        self.full_keywords.clone()
     }
 }
 
@@ -241,6 +293,35 @@ mod test {
     }
 
     #[test]
+    fn test_query_fuzzy_rescues_typo() {
+        let amp = test_amp_fixture();
+        let mut index = BTreeAmpIndex::new();
+        index.build(&[amp.clone()]).unwrap();
+
+        // one substitution in "hermanos" -> "hermanas" is rescued to the suggestion
+        let results = index.query_fuzzy("los pollos hermanas").unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].advertiser, amp.advertiser);
+        assert_eq!(results[0].full_keyword, "los pollos hermanos");
+
+        // exact keyword is not a fuzzy candidate (prefix path owns it)
+        assert!(index.query_fuzzy("los pollos hermanos").unwrap().is_empty());
+        // no ED1 neighbour
+        assert!(index.query_fuzzy("zzzzzzzzz").unwrap().is_empty());
+    }
+
+    #[test]
+    fn test_full_keywords_accessor() {
+        let amp = test_amp_fixture();
+        let mut index = BTreeAmpIndex::new();
+        index.build(&[amp]).unwrap();
+
+        let mut fks = index.full_keywords();
+        fks.sort();
+        assert_eq!(fks, vec!["los pollos", "los pollos hermanos"]);
+    }
+
+    #[test]
     fn test_build_and_query_with_top_pick_prefix() {
         let mut amp = test_amp_fixture();
         amp.top_pick_prefix = Some("los".to_string());
@@ -274,6 +355,10 @@ mod test {
         assert_eq!(stats["advertisers_count"], 1);
         assert_eq!(stats["url_templates_count"], 1);
         assert_eq!(stats["icons_count"], 1);
+        // two distinct full keywords, both >= FUZZY_MIN_LEN so both indexed for fuzzy
+        assert_eq!(stats["full_keywords_count"], 2);
+        assert_eq!(stats["fuzzy_keywords_count"], 2);
+        assert!(stats["fuzzy_delete_index_size"] > 0);
     }
 
     #[test]

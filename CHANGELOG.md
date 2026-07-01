@@ -1,3 +1,10 @@
+<a name="0.3.2"></a>
+## 0.3.2 (2026-07-01)
+
+### Features
+
+* Add edit-distance-1 fuzzy matching to the AMP index: `fuzzy` flag on `query`, a `matched_via` field on results, and a `full_keywords` accessor
+
 <a name="0.3.1"></a>
 ## 0.3.1 (2026-06-17)
 

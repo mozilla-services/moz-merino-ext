@@ -9,6 +9,7 @@ use crate::amp::index::BTreeAmpIndex;
 
 mod domain;
 mod index;
+mod sym;
 
 #[pyclass]
 #[derive(Clone, PartialEq)]
@@ -35,6 +36,9 @@ pub struct PyAmpResult {
     pub full_keyword: String,
     #[pyo3(get)]
     pub top_pick_prefix: Option<String>,
+    /// How this result was matched: "exact" (prefix index) or "fuzzy" (ED1 rescue).
+    #[pyo3(get)]
+    pub matched_via: String,
 }
 
 impl From<AmpResult> for PyAmpResult {
@@ -51,6 +55,8 @@ impl From<AmpResult> for PyAmpResult {
             icon: result.icon,
             full_keyword: result.full_keyword,
             top_pick_prefix: result.top_pick_prefix,
+            // Default to "exact"; the fuzzy fallback overrides this after conversion.
+            matched_via: "exact".to_string(),
         }
     }
 }
@@ -126,23 +132,61 @@ impl AmpIndexManager {
     /// Args:
     ///   - `index_name`: the index name.
     ///   - `query`: the query to look up.
+    ///   - `fuzzy`: if `true`, fall back to edit-distance-1 fuzzy matching when
+    ///     the exact/prefix lookup finds nothing. Defaults to `false`.
     /// Returns:
-    ///   - A vector of `PyAmpResult`.
+    ///   - A vector of `PyAmpResult`. Each result's `matched_via` is "exact" for
+    ///     prefix hits or "fuzzy" for edit-distance-1 rescues.
     /// Errors:
     ///   - `KeyError` if the given index is missing.
     ///   - `ValueError` if the query fails.
-    #[pyo3(signature = (index_name, query, /))]
-    fn query(&self, index_name: &str, query: &str) -> PyResult<Vec<PyAmpResult>> {
+    #[pyo3(signature = (index_name, query, /, fuzzy = false))]
+    fn query(&self, index_name: &str, query: &str, fuzzy: bool) -> PyResult<Vec<PyAmpResult>> {
         let indexes = self.indexes.read().unwrap();
         let index = indexes
             .get(index_name)
             .ok_or_else(|| PyKeyError::new_err(format!("Index '{}' not found", index_name)))?;
 
-        let results = index
+        let exact = index
             .query(query)
             .map_err(|e| PyValueError::new_err(format!("Query failed: {}", e)))?;
 
-        Ok(results.into_iter().map(PyAmpResult::from).collect())
+        // Return exact/prefix hits, or an empty result when fuzzy is off.
+        if !exact.is_empty() || !fuzzy {
+            return Ok(exact.into_iter().map(PyAmpResult::from).collect());
+        }
+
+        // Exact miss AND fuzzy on: fall back to ED1 candidates, flagged "fuzzy".
+        let rescued = index
+            .query_fuzzy(query)
+            .map_err(|e| PyValueError::new_err(format!("Fuzzy query failed: {}", e)))?;
+        Ok(rescued
+            .into_iter()
+            .map(|r| {
+                let mut p = PyAmpResult::from(r);
+                p.matched_via = "fuzzy".to_string();
+                p
+            })
+            .collect())
+    }
+
+    /// Return all distinct full keywords for an index (any length).
+    ///
+    /// This is used for the query normalization canonical set.
+    ///
+    /// Args:
+    ///   - `index_name`: the index name.
+    /// Returns:
+    ///   - A vector of full-keyword strings.
+    /// Errors:
+    ///   - `KeyError` if the given index is missing.
+    #[pyo3(signature = (index_name, /))]
+    fn full_keywords(&self, index_name: &str) -> PyResult<Vec<String>> {
+        let indexes = self.indexes.read().unwrap();
+        let index = indexes
+            .get(index_name)
+            .ok_or_else(|| PyKeyError::new_err(format!("Index '{}' not found", index_name)))?;
+        Ok(index.full_keywords())
     }
 
     /// Delete a given index from the index manager.
