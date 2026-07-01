@@ -161,7 +161,10 @@ impl AmpIndexer for BTreeAmpIndex {
         m.insert("icons_count".into(), self.icons.len());
         m.insert("full_keywords_count".into(), self.full_keywords.len());
         m.insert("fuzzy_keywords_count".into(), self.sym.len());
-        m.insert("fuzzy_delete_index_size".into(), self.sym.delete_index_len());
+        m.insert(
+            "fuzzy_delete_index_size".into(),
+            self.sym.delete_index_len(),
+        );
         m
     }
 

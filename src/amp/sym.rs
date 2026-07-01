@@ -197,7 +197,11 @@ mod test {
         assert_eq!(deletes("aa"), vec!["a".to_string()]);
         let v = deletes("committee");
         let distinct: HashSet<&String> = v.iter().collect();
-        assert_eq!(v.len(), distinct.len(), "deletes must return distinct variants");
+        assert_eq!(
+            v.len(),
+            distinct.len(),
+            "deletes must return distinct variants"
+        );
     }
 
     #[test]
@@ -261,19 +265,13 @@ mod test {
 
     #[test]
     fn build_respects_min_len() {
-        let idx = SymIndex::build(
-            ["cat", "cats", "camera"].iter().map(|s| s.to_string()),
-            5,
-        );
+        let idx = SymIndex::build(["cat", "cats", "camera"].iter().map(|s| s.to_string()), 5);
         assert_eq!(idx.len(), 1); // only "camera" (>= 5 chars)
     }
 
     #[test]
     fn build_dedups_keywords() {
-        let idx = SymIndex::build(
-            ["camera", "camera"].iter().map(|s| s.to_string()),
-            5,
-        );
+        let idx = SymIndex::build(["camera", "camera"].iter().map(|s| s.to_string()), 5);
         assert_eq!(idx.len(), 1);
     }
 }
