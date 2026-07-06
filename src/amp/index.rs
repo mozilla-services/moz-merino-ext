@@ -6,7 +6,7 @@ use crate::amp::sym::SymIndex;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::ops::Bound::{Included, Unbounded};
 
-/// Minimum keyword/query length for fuzzy matching (plan `min_candidate_len`).
+/// Minimum keyword/query length for fuzzy matching.
 /// Short queries generate too many noisy ED1 neighbours, so they're excluded.
 const FUZZY_MIN_LEN: usize = 5;
 
@@ -39,7 +39,7 @@ pub struct BTreeAmpIndex {
     icons: HashMap<u32, String>,
     /// Edit-distance-1 delete index over full keywords, for fuzzy rescue.
     sym: SymIndex,
-    /// All distinct full keywords (any length), for the normalization canonical.
+    /// All distinct full keywords AMP query normalization canonical set
     full_keywords: Vec<String>,
 }
 
@@ -120,8 +120,7 @@ impl AmpIndexer for BTreeAmpIndex {
         self.full_keywords.shrink_to_fit();
 
         // Build the ED1 fuzzy delete index from full keywords >= FUZZY_MIN_LEN chars.
-        let sym = SymIndex::build(self.full_keywords.iter().cloned(), FUZZY_MIN_LEN);
-        self.sym = sym;
+        self.sym = SymIndex::build(self.full_keywords.iter().cloned(), FUZZY_MIN_LEN);
 
         Ok(())
     }

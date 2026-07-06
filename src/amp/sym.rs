@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-/// The distinct one-character-deletion variants of `word` (over chars, not bytes).
+/// The distinct one-character-deletion variants of `word`.
 ///
 /// e.g. `"abc"` -> `["bc", "ac", "ab"]`. Repeated letters delete to the same
 /// variant from different positions, so those are collapsed (`"aa"` -> `["a"]`)
@@ -25,7 +25,7 @@ pub fn deletes(word: &str) -> Vec<String> {
     out
 }
 
-/// Whether `a` and `b` are exactly Damerau-Levenshtein distance 1 apart.
+/// Checks if `a` and `b` are exactly Damerau-Levenshtein distance 1 apart.
 /// i.e. insertions, deletions or substitutions of a single character, or transposition
 /// of two adjacent characters
 ///
@@ -38,7 +38,7 @@ pub fn edit_distance_one(a: &str, b: &str) -> bool {
     let ca: Vec<char> = a.chars().collect();
     let cb: Vec<char> = b.chars().collect();
     let (la, lb) = (ca.len(), cb.len());
-    // if lengths differ by >1, edit distance is already greater than 1
+    // if lengths differ by > 1, edit distance is already greater than 1
     if la.abs_diff(lb) > 1 {
         return false;
     }
