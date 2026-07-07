@@ -6,10 +6,6 @@ use crate::amp::sym::SymIndex;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::ops::Bound::{Included, Unbounded};
 
-/// Minimum keyword/query length for fuzzy matching.
-/// Short queries generate too many noisy ED1 neighbours, so they're excluded.
-const FUZZY_MIN_LEN: usize = 5;
-
 /// Optimized AMP suggestion for storage
 #[derive(Clone)]
 struct AmpSuggestion {
@@ -119,8 +115,8 @@ impl AmpIndexer for BTreeAmpIndex {
         self.suggestions.shrink_to_fit();
         self.full_keywords.shrink_to_fit();
 
-        // Build the ED1 fuzzy delete index from full keywords >= FUZZY_MIN_LEN chars.
-        self.sym = SymIndex::build(self.full_keywords.iter().cloned(), FUZZY_MIN_LEN);
+        // Build the ED1 fuzzy delete index from full keywords >= SymIndex::FUZZY_MIN_LEN chars.
+        self.sym = SymIndex::build(self.full_keywords.iter().cloned(), SymIndex::FUZZY_MIN_LEN);
 
         Ok(())
     }
@@ -357,7 +353,7 @@ mod test {
         assert_eq!(stats["advertisers_count"], 1);
         assert_eq!(stats["url_templates_count"], 1);
         assert_eq!(stats["icons_count"], 1);
-        // two distinct full keywords, both >= FUZZY_MIN_LEN so both indexed for fuzzy
+        // two distinct full keywords, both >= SymIndex::FUZZY_MIN_LEN so both indexed for fuzzy
         assert_eq!(stats["full_keywords_count"], 2);
         assert_eq!(stats["fuzzy_keywords_count"], 2);
         assert!(stats["fuzzy_delete_index_size"] > 0);

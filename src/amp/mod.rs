@@ -11,6 +11,26 @@ mod domain;
 mod index;
 mod sym;
 
+/// How a result was matched. Internal Rust representation for type safety;
+/// exposed to Python as a string via `PyAmpResult::matched_via`.
+#[derive(Clone, Copy, PartialEq)]
+enum MatchedVia {
+    /// Exact/prefix-index hit.
+    Exact,
+    /// Edit-distance-1 fuzzy rescue.
+    Fuzzy,
+}
+
+impl MatchedVia {
+    /// The stable wire string exposed to Python.
+    fn as_str(self) -> &'static str {
+        match self {
+            MatchedVia::Exact => "exact",
+            MatchedVia::Fuzzy => "fuzzy",
+        }
+    }
+}
+
 #[pyclass]
 #[derive(Clone, PartialEq)]
 pub struct PyAmpResult {
@@ -36,9 +56,9 @@ pub struct PyAmpResult {
     pub full_keyword: String,
     #[pyo3(get)]
     pub top_pick_prefix: Option<String>,
-    /// How this result was matched: "exact" (prefix index) or "fuzzy" (ED1 rescue).
-    #[pyo3(get)]
-    pub matched_via: String,
+    /// How this result was matched. Stored as an enum for type safety; exposed
+    /// to Python as a str ("exact"/"fuzzy") via the getter below.
+    matched_via: MatchedVia,
 }
 
 impl From<AmpResult> for PyAmpResult {
@@ -55,9 +75,18 @@ impl From<AmpResult> for PyAmpResult {
             icon: result.icon,
             full_keyword: result.full_keyword,
             top_pick_prefix: result.top_pick_prefix,
-            // Default to "exact"; the fuzzy fallback overrides this after conversion.
-            matched_via: "exact".to_string(),
+            // Default to Exact; the fuzzy fallback overrides this after conversion.
+            matched_via: MatchedVia::Exact,
         }
+    }
+}
+
+#[pymethods]
+impl PyAmpResult {
+    /// How this result was matched: "exact" (prefix index) or "fuzzy" (ED1 rescue).
+    #[getter]
+    fn matched_via(&self) -> &'static str {
+        self.matched_via.as_str()
     }
 }
 
@@ -164,7 +193,7 @@ impl AmpIndexManager {
             .into_iter()
             .map(|r| {
                 let mut p = PyAmpResult::from(r);
-                p.matched_via = "fuzzy".to_string();
+                p.matched_via = MatchedVia::Fuzzy;
                 p
             })
             .collect())

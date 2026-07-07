@@ -98,6 +98,10 @@ pub struct SymIndex {
 }
 
 impl SymIndex {
+    /// Minimum keyword/query length for fuzzy matching (production default).
+    /// Short queries generate too many noisy ED1 neighbours, so they're excluded.
+    pub const FUZZY_MIN_LEN: usize = 5;
+
     /// Build from full-keyword strings. Keeps only keywords with at least
     /// `min_len` chars, deduped; assigns each a stable id and indexes the
     /// keyword itself plus each of its one-char-delete variants.
