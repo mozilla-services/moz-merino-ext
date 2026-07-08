@@ -197,9 +197,9 @@ impl SymIndex {
         ids.sort_unstable();
         ids.dedup();
         ids.into_iter()
-            .map(|id| &self.keywords[id as usize])
+            .map(|id| self.keywords[id as usize].as_ref())
             .filter(|kw| edit_distance_one(query, kw))
-            .map(|kw| kw.to_string())
+            .map(str::to_string)
             .collect()
     }
 
