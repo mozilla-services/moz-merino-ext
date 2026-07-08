@@ -145,52 +145,6 @@ def test_query_index(idxmgr: AmpIndexManager, amp_data: AMP_DATA_TYPE) -> None:
             assert suggestions[0].full_keyword == full_keywords[i]
 
 
-def test_query_fuzzy_rescues_typo(idxmgr: AmpIndexManager, amp_data: AMP_DATA_TYPE) -> None:
-    """A single-typo query is rescued only when `fuzzy=True`, flagged as fuzzy."""
-    idxmgr.build(IDX_NAME, json.dumps(amp_data))
-
-    # "los pollos hermanas" is one substitution from "los pollos hermanos".
-    # Exact-only (default) finds nothing.
-    assert idxmgr.query(IDX_NAME, "los pollos hermanas") == []
-
-    rescued: list[PyAmpResult] = idxmgr.query(IDX_NAME, "los pollos hermanas", fuzzy=True)
-    assert len(rescued) == 1
-    assert rescued[0].full_keyword == "los pollos hermanos"
-    assert rescued[0].advertiser == "Los Pollos Hermanos"
-    assert rescued[0].matched_via == "fuzzy"
-
-
-def test_query_exact_takes_precedence_over_fuzzy(
-    idxmgr: AmpIndexManager, amp_data: AMP_DATA_TYPE
-) -> None:
-    """An exact/prefix hit is returned (flagged "exact") even when fuzzy=True."""
-    idxmgr.build(IDX_NAME, json.dumps(amp_data))
-
-    results: list[PyAmpResult] = idxmgr.query(IDX_NAME, "los pollos hermanos", fuzzy=True)
-    assert len(results) == 1
-    assert results[0].full_keyword == "los pollos hermanos"
-    assert results[0].matched_via == "exact"  # fuzzy fallback not used
-
-
-def test_query_fuzzy_no_neighbour_returns_empty(
-    idxmgr: AmpIndexManager, amp_data: AMP_DATA_TYPE
-) -> None:
-    """A query with no edit-distance-1 neighbour returns nothing even with fuzzy=True."""
-    idxmgr.build(IDX_NAME, json.dumps(amp_data))
-    assert idxmgr.query(IDX_NAME, "zzzzzzzz", fuzzy=True) == []
-
-
-def test_full_keywords(idxmgr: AmpIndexManager, amp_data: AMP_DATA_TYPE) -> None:
-    """`full_keywords` returns the distinct full-keyword set for the index."""
-    idxmgr.build(IDX_NAME, json.dumps(amp_data))
-    assert set(idxmgr.full_keywords(IDX_NAME)) == {
-        "los pollos",
-        "los pollos hermanos",
-        "lasagna",
-        "lasagna come out tomorrow",
-    }
-
-
 def test_list_icons(idxmgr: AmpIndexManager, amp_data: AMP_DATA_TYPE) -> None:
     """Test `delete` of the index manager."""
     idxmgr.build(IDX_NAME, json.dumps(amp_data))

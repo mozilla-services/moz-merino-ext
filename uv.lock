@@ -43,7 +43,7 @@ wheels = [
 
 [[package]]
 name = "mozilla-merino-ext"
-version = "0.3.2"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "maturin" },
