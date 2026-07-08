@@ -89,7 +89,7 @@ pub fn edit_distance_one(a: &str, b: &str) -> bool {
 /// Compact keyword-id list stored per delete-index key.
 ///
 /// The vast majority of delete-variants map to a single keyword id (multi-id
-/// entries are ~0.4% in practice), so that case is stored inline with no heap
+/// entries are ~0.1% in practice), so that case is stored inline with no heap
 /// allocation. Shared entries spill to a `Vec`. This avoids one tiny heap
 /// allocation per delete-index entry, which dominates the index footprint at scale.
 enum Ids {
