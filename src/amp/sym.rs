@@ -4,6 +4,7 @@
 
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::collections::hash_map::Entry;
 
 /// The distinct one-character-deletion variants of `word`.
 ///
@@ -85,13 +86,44 @@ pub fn edit_distance_one(a: &str, b: &str) -> bool {
     true
 }
 
+/// Compact keyword-id list stored per delete-index key.
+///
+/// The vast majority of delete-variants map to a single keyword id (multi-id
+/// entries are ~0.4% in practice), so that case is stored inline with no heap
+/// allocation. Shared entries spill to a `Vec`. This avoids one tiny heap
+/// allocation per delete-index entry, which dominates the index footprint at scale.
+enum Ids {
+    /// Common case: a single keyword id, stored inline (no heap allocation).
+    One(u32),
+    /// Rare case: a delete-variant reachable from multiple keywords.
+    Many(Vec<u32>),
+}
+
+impl Ids {
+    /// Append an id, promoting a single-id entry to a `Vec` on demand.
+    fn push(&mut self, id: u32) {
+        match self {
+            Ids::One(first) => *self = Ids::Many(vec![*first, id]),
+            Ids::Many(ids) => ids.push(id),
+        }
+    }
+
+    /// View the ids as a slice regardless of representation.
+    fn as_slice(&self) -> &[u32] {
+        match self {
+            Ids::One(id) => std::slice::from_ref(id),
+            Ids::Many(ids) => ids,
+        }
+    }
+}
+
 /// SymSpell delete index over full-keyword strings for ED1 fuzzy rescue.
 #[derive(Default)]
 pub struct SymIndex {
     /// Distinct indexed keywords; a keyword's id is its position here.
-    keywords: Vec<String>,
+    keywords: Vec<Box<str>>,
     /// keyword or one of its delete-variants -> ids reachable in <=1 deletion.
-    delete_index: HashMap<String, Vec<u32>>,
+    delete_index: HashMap<Box<str>, Ids>,
     /// Minimum char length to index a keyword AND to attempt a fuzzy query.
     /// lower char lengths tend to produce too many false positives (default is >= 5)
     min_len: usize,
@@ -116,19 +148,31 @@ impl SymIndex {
             if kw.chars().count() < min_len || !seen.insert(kw.clone()) {
                 continue;
             }
-            // use id so we have single reference to keyword in vector
+            // use id so we have a single reference to the keyword in the vector
             let id = idx.keywords.len() as u32;
-            // if same deletes map to different keywords, we
-            // add to array.
-            // multi candidates are rare (< 0.1 %); merino will
-            // handle the candidate selection downstream
-            idx.delete_index.entry(kw.clone()).or_default().push(id);
+            // keys are immutable once built -> store as Box<str> to save 8 bytes each
+            let kw: Box<str> = kw.into_boxed_str();
+            // index the keyword itself plus each one-char-delete variant. If the same
+            // delete-variant is reachable from multiple keywords (rare, ~0.4%) insert()
+            // promotes it to a Vec; merino selects among candidates downstream.
+            idx.insert(kw.clone(), id);
             for d in deletes(&kw) {
-                idx.delete_index.entry(d).or_default().push(id);
+                idx.insert(d.into_boxed_str(), id);
             }
             idx.keywords.push(kw);
         }
         idx
+    }
+
+    /// Record that delete-index `key` reaches keyword `id`, keeping single-id
+    /// entries allocation-free (see `Ids`).
+    fn insert(&mut self, key: Box<str>, id: u32) {
+        match self.delete_index.entry(key) {
+            Entry::Occupied(mut e) => e.get_mut().push(id),
+            Entry::Vacant(e) => {
+                e.insert(Ids::One(id));
+            }
+        }
     }
 
     /// Return the full keywords within ED1 of `query` (exact equality excluded).
@@ -139,11 +183,11 @@ impl SymIndex {
         }
         let mut ids: Vec<u32> = Vec::new();
         if let Some(v) = self.delete_index.get(query) {
-            ids.extend_from_slice(v);
+            ids.extend_from_slice(v.as_slice());
         }
         for d in deletes(query) {
             if let Some(v) = self.delete_index.get(d.as_str()) {
-                ids.extend_from_slice(v);
+                ids.extend_from_slice(v.as_slice());
             }
         }
         // need the proper edit distance 1 filter below because sharing
@@ -155,7 +199,7 @@ impl SymIndex {
         ids.into_iter()
             .map(|id| &self.keywords[id as usize])
             .filter(|kw| edit_distance_one(query, kw))
-            .cloned()
+            .map(|kw| kw.to_string())
             .collect()
     }
 
