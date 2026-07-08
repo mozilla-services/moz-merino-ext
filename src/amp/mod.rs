@@ -9,6 +9,27 @@ use crate::amp::index::BTreeAmpIndex;
 
 mod domain;
 mod index;
+mod sym;
+
+/// How a result was matched. Internal Rust representation for type safety;
+/// exposed to Python as a string via `PyAmpResult::matched_via`.
+#[derive(Clone, Copy, PartialEq)]
+enum MatchedVia {
+    /// Exact/prefix-index hit.
+    Exact,
+    /// Edit-distance-1 fuzzy rescue.
+    Fuzzy,
+}
+
+impl MatchedVia {
+    /// The stable wire string exposed to Python.
+    fn as_str(self) -> &'static str {
+        match self {
+            MatchedVia::Exact => "exact",
+            MatchedVia::Fuzzy => "fuzzy",
+        }
+    }
+}
 
 #[pyclass]
 #[derive(Clone, PartialEq)]
@@ -35,6 +56,9 @@ pub struct PyAmpResult {
     pub full_keyword: String,
     #[pyo3(get)]
     pub top_pick_prefix: Option<String>,
+    /// How this result was matched. Stored as an enum for type safety; exposed
+    /// to Python as a str ("exact"/"fuzzy") via the getter below.
+    matched_via: MatchedVia,
 }
 
 impl From<AmpResult> for PyAmpResult {
@@ -51,7 +75,18 @@ impl From<AmpResult> for PyAmpResult {
             icon: result.icon,
             full_keyword: result.full_keyword,
             top_pick_prefix: result.top_pick_prefix,
+            // Default to Exact; the fuzzy fallback overrides this after conversion.
+            matched_via: MatchedVia::Exact,
         }
+    }
+}
+
+#[pymethods]
+impl PyAmpResult {
+    /// How this result was matched: "exact" (prefix index) or "fuzzy" (ED1 rescue).
+    #[getter]
+    fn matched_via(&self) -> &'static str {
+        self.matched_via.as_str()
     }
 }
 
@@ -126,23 +161,61 @@ impl AmpIndexManager {
     /// Args:
     ///   - `index_name`: the index name.
     ///   - `query`: the query to look up.
+    ///   - `fuzzy`: if `true`, fall back to edit-distance-1 fuzzy matching when
+    ///     the exact/prefix lookup finds nothing. Defaults to `false`.
     /// Returns:
-    ///   - A vector of `PyAmpResult`.
+    ///   - A vector of `PyAmpResult`. Each result's `matched_via` is "exact" for
+    ///     prefix hits or "fuzzy" for edit-distance-1 rescues.
     /// Errors:
     ///   - `KeyError` if the given index is missing.
     ///   - `ValueError` if the query fails.
-    #[pyo3(signature = (index_name, query, /))]
-    fn query(&self, index_name: &str, query: &str) -> PyResult<Vec<PyAmpResult>> {
+    #[pyo3(signature = (index_name, query, /, fuzzy = false))]
+    fn query(&self, index_name: &str, query: &str, fuzzy: bool) -> PyResult<Vec<PyAmpResult>> {
         let indexes = self.indexes.read().unwrap();
         let index = indexes
             .get(index_name)
             .ok_or_else(|| PyKeyError::new_err(format!("Index '{}' not found", index_name)))?;
 
-        let results = index
+        let exact = index
             .query(query)
             .map_err(|e| PyValueError::new_err(format!("Query failed: {}", e)))?;
 
-        Ok(results.into_iter().map(PyAmpResult::from).collect())
+        // Return exact/prefix hits, or an empty result when fuzzy is off.
+        if !exact.is_empty() || !fuzzy {
+            return Ok(exact.into_iter().map(PyAmpResult::from).collect());
+        }
+
+        // Exact miss AND fuzzy on: fall back to ED1 candidates, flagged "fuzzy".
+        let rescued = index
+            .query_fuzzy(query)
+            .map_err(|e| PyValueError::new_err(format!("Fuzzy query failed: {}", e)))?;
+        Ok(rescued
+            .into_iter()
+            .map(|r| {
+                let mut p = PyAmpResult::from(r);
+                p.matched_via = MatchedVia::Fuzzy;
+                p
+            })
+            .collect())
+    }
+
+    /// Return all distinct full keywords for an index (any length).
+    ///
+    /// This is used for the query normalization canonical set.
+    ///
+    /// Args:
+    ///   - `index_name`: the index name.
+    /// Returns:
+    ///   - A vector of full-keyword strings.
+    /// Errors:
+    ///   - `KeyError` if the given index is missing.
+    #[pyo3(signature = (index_name, /))]
+    fn full_keywords(&self, index_name: &str) -> PyResult<Vec<String>> {
+        let indexes = self.indexes.read().unwrap();
+        let index = indexes
+            .get(index_name)
+            .ok_or_else(|| PyKeyError::new_err(format!("Index '{}' not found", index_name)))?;
+        Ok(index.full_keywords())
     }
 
     /// Delete a given index from the index manager.
