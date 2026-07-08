@@ -153,7 +153,7 @@ impl SymIndex {
             // keys are immutable once built -> store as Box<str> to save 8 bytes each
             let kw: Box<str> = kw.into_boxed_str();
             // index the keyword itself plus each one-char-delete variant. If the same
-            // delete-variant is reachable from multiple keywords (rare, ~0.4%) insert()
+            // delete-variant is reachable from multiple keywords insert()
             // promotes it to a Vec; merino selects among candidates downstream.
             idx.insert(kw.clone(), id);
             for d in deletes(&kw) {
