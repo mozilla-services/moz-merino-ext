@@ -1,9 +1,13 @@
 <a name="0.3.2"></a>
-## 0.3.2 (2026-07-01)
+## 0.3.2 (2026-07-08)
 
 ### Features
 
 * Add edit-distance-1 fuzzy matching to the AMP index: `fuzzy` flag on `query`, a `matched_via` field on results, and a `full_keywords` accessor
+
+### Maintenance
+
+* Reduce SymIndex memory footprint: inline single keyword-id storage (`Ids` enum) + `Box<str>` delete-index keys (~10% smaller fuzzy index; exact/fuzzy latency and build time unchanged)
 
 <a name="0.3.1"></a>
 ## 0.3.1 (2026-06-17)
