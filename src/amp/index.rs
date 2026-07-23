@@ -21,8 +21,8 @@ struct AmpSuggestion {
     iab: String,
     icon_id: u32,
     serp_categories: Vec<i32>,
-    header_text: String,
-    suggestion_id: String,
+    header_text: Option<String>,
+    suggestion_id: Option<String>,
     top_pick_prefix: Option<String>,
 }
 
@@ -271,8 +271,8 @@ mod test {
             impression_url: "https://example.com/impression_url".to_string(),
             icon: "https://example.com/icon".to_string(),
             serp_categories: vec![0],
-            header_text: "Los pollos hermanos header text".to_string(),
-            suggestion_id: "d290f1ee-6c54-4b01-90e6-d701748f0851".to_string(),
+            header_text: Some("Los pollos hermanos header text".to_string()),
+            suggestion_id: Some("d290f1ee-6c54-4b01-90e6-d701748f0851".to_string()),
             top_pick_prefix: None,
         }
     }
@@ -339,6 +339,38 @@ mod test {
         let result = index.query("los pollos hermanos").unwrap();
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].top_pick_prefix, Some("los".to_string()));
+    }
+
+    #[test]
+    fn test_build_and_query_with_header_text_and_suggestion_id() {
+        let amp = test_amp_fixture();
+        let mut index = BTreeAmpIndex::new();
+        index.build(&[amp.clone()]).unwrap();
+
+        let result = index.query("los pollos hermanos").unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(
+            result[0].header_text,
+            Some("Los pollos hermanos header text".to_string())
+        );
+        assert_eq!(
+            result[0].suggestion_id,
+            Some("d290f1ee-6c54-4b01-90e6-d701748f0851".to_string())
+        );
+    }
+
+    #[test]
+    fn test_build_and_query_without_header_text_and_suggestion_id() {
+        let mut amp = test_amp_fixture();
+        amp.header_text = None;
+        amp.suggestion_id = None;
+        let mut index = BTreeAmpIndex::new();
+        index.build(&[amp.clone()]).unwrap();
+
+        let result = index.query("los pollos hermanos").unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].header_text, None);
+        assert_eq!(result[0].suggestion_id, None);
     }
 
     #[test]

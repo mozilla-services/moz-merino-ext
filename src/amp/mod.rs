@@ -55,9 +55,9 @@ pub struct PyAmpResult {
     #[pyo3(get)]
     pub full_keyword: String,
     #[pyo3(get)]
-    pub header_text: String,
+    pub header_text: Option<String>,
     #[pyo3(get)]
-    pub suggestion_id: String,
+    pub suggestion_id: Option<String>,
     #[pyo3(get)]
     pub top_pick_prefix: Option<String>,
     /// How this result was matched. Stored as an enum for type safety; exposed

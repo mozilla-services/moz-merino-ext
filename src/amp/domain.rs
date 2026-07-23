@@ -23,8 +23,10 @@ pub struct OriginalAmp {
     pub impression_url: String,
     pub icon: String,
     pub serp_categories: Vec<i32>,
-    pub header_text: String,
-    pub suggestion_id: String,
+    #[serde(default)]
+    pub header_text: Option<String>,
+    #[serde(default)]
+    pub suggestion_id: Option<String>,
     #[serde(default)]
     pub top_pick_prefix: Option<String>,
 }
@@ -42,8 +44,8 @@ pub struct AmpResult {
     pub icon: String,
     pub full_keyword: String,
     pub serp_categories: Vec<i32>,
-    pub header_text: String,
-    pub suggestion_id: String,
+    pub header_text: Option<String>,
+    pub suggestion_id: Option<String>,
     pub top_pick_prefix: Option<String>,
 }
 

@@ -10,8 +10,8 @@ class PyAmpResult:
     serp_categories: list[int]
     icon: str
     full_keyword: str
-    header_text: str
-    suggestion_id: str
+    header_text: str | None
+    suggestion_id: str | None
     top_pick_prefix: str | None
     matched_via: str
 
@@ -26,8 +26,8 @@ class PyAmpResult:
                  serp_categories: list[int],
                  icon: str,
                  full_keyword: str,
-                 header_text: str,
-                 suggestion_id: str,
+                 header_text: str | None = None,
+                 suggestion_id: str | None = None,
                  top_pick_prefix: str | None = None,
                  matched_via: str = "exact"): ...
     @property
@@ -51,9 +51,9 @@ class PyAmpResult:
     @property
     def full_keyword(self) -> str: ...
     @property
-    def header_text(self) -> str: ...
+    def header_text(self) -> str | None: ...
     @property
-    def suggestion_id(self) -> str: ...
+    def suggestion_id(self) -> str | None: ...
     @property
     def top_pick_prefix(self) -> str | None: ...
     @property
