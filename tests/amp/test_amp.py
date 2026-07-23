@@ -25,6 +25,9 @@ def assert_suggestion(expect: dict[str, Any], actual: PyAmpResult) -> bool:
         ("icon", None),
         ("impression_url", None),
         ("click_url", None),
+        ("top_pick_prefix", None),
+        ("header_text", None),
+        ("suggestion_id", None),
     ]:
         key = key or attr
         assert expect[key] == getattr(actual, attr), (
@@ -62,6 +65,9 @@ def amp_data() -> AMP_DATA_TYPE:
             "impression_url": "https://example.com/impression_url",
             "click_url": "https://example.com/click_url",
             "score": 0.3,
+            "top_pick_prefix": "los",
+            "header_text": "Los pollos hermanos header text",
+            "suggestion_id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
         },
         {
             "id": 101,
@@ -76,6 +82,9 @@ def amp_data() -> AMP_DATA_TYPE:
             "click_url": "https://example.com/click_url",
             "score": 0.3,
             "serp_categories": [1, 2],
+            "top_pick_prefix": "good",
+            "header_text": None,
+            "suggestion_id": None,
         },
     ]
 

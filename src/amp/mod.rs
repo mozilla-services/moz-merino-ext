@@ -55,6 +55,10 @@ pub struct PyAmpResult {
     #[pyo3(get)]
     pub full_keyword: String,
     #[pyo3(get)]
+    pub header_text: Option<String>,
+    #[pyo3(get)]
+    pub suggestion_id: Option<String>,
+    #[pyo3(get)]
     pub top_pick_prefix: Option<String>,
     /// How this result was matched. Stored as an enum for type safety; exposed
     /// to Python as a str ("exact"/"fuzzy") via the getter below.
@@ -74,6 +78,8 @@ impl From<AmpResult> for PyAmpResult {
             serp_categories: result.serp_categories,
             icon: result.icon,
             full_keyword: result.full_keyword,
+            header_text: result.header_text,
+            suggestion_id: result.suggestion_id,
             top_pick_prefix: result.top_pick_prefix,
             // Default to Exact; the fuzzy fallback overrides this after conversion.
             matched_via: MatchedVia::Exact,
