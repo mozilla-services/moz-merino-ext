@@ -25,7 +25,6 @@ pub struct OriginalAmp {
     pub serp_categories: Vec<i32>,
     pub header_text: Option<String>,
     pub suggestion_id: Option<String>,
-    #[serde(default)]
     pub top_pick_prefix: Option<String>,
 }
 

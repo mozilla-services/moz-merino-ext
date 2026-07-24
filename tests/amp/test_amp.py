@@ -154,6 +154,19 @@ def test_query_index(idxmgr: AmpIndexManager, amp_data: AMP_DATA_TYPE) -> None:
             assert suggestions[0].full_keyword == full_keywords[i]
 
 
+def test_query_optional_fields_omitted(idxmgr: AmpIndexManager, amp_data: AMP_DATA_TYPE) -> None:
+    """Optional fields absent from the payload deserialize to `None`."""
+    for key in ("top_pick_prefix", "header_text", "suggestion_id"):
+        del amp_data[0][key]
+    idxmgr.build(IDX_NAME, json.dumps(amp_data))
+
+    results: list[PyAmpResult] = idxmgr.query(IDX_NAME, "los pollos hermanos")
+    assert len(results) == 1
+    assert results[0].top_pick_prefix is None
+    assert results[0].header_text is None
+    assert results[0].suggestion_id is None
+
+
 def test_query_fuzzy_rescues_typo(idxmgr: AmpIndexManager, amp_data: AMP_DATA_TYPE) -> None:
     """A single-typo query is rescued only when `fuzzy=True`, flagged as fuzzy."""
     idxmgr.build(IDX_NAME, json.dumps(amp_data))
