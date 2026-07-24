@@ -1,3 +1,11 @@
+<a name="0.3.3"></a>
+## 0.3.3 (2026-07-24)
+
+### Features
+
+* Add `header_text` and `suggestion_id` fields to AMP suggestions
+* Remove `serde(default)` for `top_pick_prefix`
+
 <a name="0.3.2"></a>
 ## 0.3.2 (2026-07-08)
 
