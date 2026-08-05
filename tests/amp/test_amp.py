@@ -167,6 +167,17 @@ def test_query_optional_fields_omitted(idxmgr: AmpIndexManager, amp_data: AMP_DA
     assert results[0].suggestion_id is None
 
 
+def test_query_null_top_pick_prefix_propagated(
+    idxmgr: AmpIndexManager, amp_data: AMP_DATA_TYPE
+) -> None:
+    """An explicit JSON `null` for `top_pick_prefix` propagates as `None`."""
+    amp_data[0]["top_pick_prefix"] = None
+    idxmgr.build(IDX_NAME, json.dumps(amp_data))
+    results: list[PyAmpResult] = idxmgr.query(IDX_NAME, "los pollos hermanos")
+    assert len(results) == 1
+    assert results[0].top_pick_prefix is None
+
+
 def test_query_fuzzy_rescues_typo(idxmgr: AmpIndexManager, amp_data: AMP_DATA_TYPE) -> None:
     """A single-typo query is rescued only when `fuzzy=True`, flagged as fuzzy."""
     idxmgr.build(IDX_NAME, json.dumps(amp_data))

@@ -195,7 +195,46 @@ pub(crate) fn load_amp_data<P: AsRef<Path>>(path: P) -> Result<Vec<OriginalAmp>,
 mod test {
     use std::collections::HashMap;
 
-    use crate::amp::domain::{FullKeyword, collapse_keywords, dictionary_encode, extract_template};
+    use crate::amp::domain::{
+        FullKeyword, OriginalAmp, collapse_keywords, dictionary_encode, extract_template,
+    };
+
+    /// Splice a `top_pick_prefix` JSON fragment (leading comma included) into a
+    /// test AMP record (pass an empty string to omit the field entirely)
+    fn build_top_pick_amp_json(top_pick_prefix_json: &str) -> String {
+        format!(
+            r#"{{
+                "id": 100,
+                "advertiser": "Los Pollos Hermanos",
+                "iab_category": "8 - Food & Drink",
+                "serp_categories": [0],
+                "keywords": ["los", "los pollos hermanos"],
+                "title": "Los Pollos Hermanos - Albuquerque",
+                "url": "https://www.lph-nm.biz",
+                "icon": "los-pollos-favicon",
+                "impression_url": "https://example.com/impression_url",
+                "click_url": "https://example.com/click_url"
+                {top_pick_prefix_json}
+            }}"#
+        )
+    }
+
+    #[test]
+    fn test_deserialize_top_pick_prefix() {
+        for (field_json, expected) in [
+            (r#", "top_pick_prefix": "los""#, Some("los")),
+            (r#", "top_pick_prefix": null"#, None),
+            ("", None),
+        ] {
+            let amp: OriginalAmp =
+                serde_json::from_str(&build_top_pick_amp_json(field_json)).unwrap();
+            assert_eq!(
+                amp.top_pick_prefix.as_deref(),
+                expected,
+                "unexpected `top_pick_prefix` for `{field_json}`"
+            );
+        }
+    }
 
     #[test]
     fn test_extract_template_with_query_param() {
