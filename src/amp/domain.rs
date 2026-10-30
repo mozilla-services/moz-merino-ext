@@ -41,6 +41,7 @@ pub struct AmpResult {
     pub icon: String,
     pub full_keyword: String,
     pub serp_categories: Vec<i32>,
+    pub score: Option<f64>,
     pub header_text: Option<String>,
     pub suggestion_id: Option<String>,
     pub top_pick_prefix: Option<String>,

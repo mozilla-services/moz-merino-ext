@@ -55,6 +55,8 @@ pub struct PyAmpResult {
     #[pyo3(get)]
     pub full_keyword: String,
     #[pyo3(get)]
+    pub score: Option<f64>,
+    #[pyo3(get)]
     pub header_text: Option<String>,
     #[pyo3(get)]
     pub suggestion_id: Option<String>,
@@ -78,6 +80,7 @@ impl From<AmpResult> for PyAmpResult {
             serp_categories: result.serp_categories,
             icon: result.icon,
             full_keyword: result.full_keyword,
+            score: result.score,
             header_text: result.header_text,
             suggestion_id: result.suggestion_id,
             top_pick_prefix: result.top_pick_prefix,
