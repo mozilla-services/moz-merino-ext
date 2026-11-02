@@ -21,6 +21,7 @@ struct AmpSuggestion {
     iab: String,
     icon_id: u32,
     serp_categories: Vec<i32>,
+    score: Option<f64>,
     header_text: Option<String>,
     suggestion_id: Option<String>,
     top_pick_prefix: Option<String>,
@@ -96,6 +97,7 @@ impl AmpIndexer for BTreeAmpIndex {
                 iab: amp.iab_category.clone(),
                 icon_id,
                 serp_categories: amp.serp_categories.clone(),
+                score: amp.score,
                 header_text: amp.header_text.clone(),
                 suggestion_id: amp.suggestion_id.clone(),
                 top_pick_prefix: amp.top_pick_prefix.clone(),
@@ -203,6 +205,7 @@ impl BTreeAmpIndex {
             icon,
             full_keyword: full_keyword.full_keyword(keyword),
             serp_categories: sugg.serp_categories.clone(),
+            score: sugg.score,
             header_text: sugg.header_text.clone(),
             suggestion_id: sugg.suggestion_id.clone(),
             top_pick_prefix: sugg.top_pick_prefix.clone(),
@@ -295,6 +298,7 @@ mod test {
         assert_eq!(suggestion.impression_url, amp.impression_url);
         assert_eq!(suggestion.icon, amp.icon);
         assert_eq!(suggestion.serp_categories, amp.serp_categories);
+        assert_eq!(suggestion.score, amp.score);
         assert_eq!(suggestion.header_text, amp.header_text);
         assert_eq!(suggestion.suggestion_id, amp.suggestion_id);
         assert_eq!(suggestion.top_pick_prefix, amp.top_pick_prefix);
@@ -339,6 +343,18 @@ mod test {
         let result = index.query("los pollos hermanos").unwrap();
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].top_pick_prefix, Some("los".to_string()));
+    }
+
+    #[test]
+    fn test_build_and_query_without_score() {
+        let mut amp = test_amp_fixture();
+        amp.score = None;
+        let mut index = BTreeAmpIndex::new();
+        index.build(&[amp.clone()]).unwrap();
+
+        let result = index.query("los pollos hermanos").unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].score, None);
     }
 
     #[test]
@@ -440,6 +456,7 @@ mod test {
             icon: amp.icon.clone(),
             full_keyword: "los pollos".to_string(),
             serp_categories: vec![0],
+            score: amp.score,
             header_text: amp.header_text.clone(),
             suggestion_id: amp.suggestion_id.clone(),
             top_pick_prefix: None,

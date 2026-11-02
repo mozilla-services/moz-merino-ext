@@ -25,6 +25,7 @@ def assert_suggestion(expect: dict[str, Any], actual: PyAmpResult) -> bool:
         ("icon", None),
         ("impression_url", None),
         ("click_url", None),
+        ("score", None),
         ("top_pick_prefix", None),
         ("header_text", None),
         ("suggestion_id", None),
@@ -156,12 +157,13 @@ def test_query_index(idxmgr: AmpIndexManager, amp_data: AMP_DATA_TYPE) -> None:
 
 def test_query_optional_fields_omitted(idxmgr: AmpIndexManager, amp_data: AMP_DATA_TYPE) -> None:
     """Optional fields absent from the payload deserialize to `None`."""
-    for key in ("top_pick_prefix", "header_text", "suggestion_id"):
+    for key in ("score", "top_pick_prefix", "header_text", "suggestion_id"):
         del amp_data[0][key]
     idxmgr.build(IDX_NAME, json.dumps(amp_data))
 
     results: list[PyAmpResult] = idxmgr.query(IDX_NAME, "los pollos hermanos")
     assert len(results) == 1
+    assert results[0].score is None
     assert results[0].top_pick_prefix is None
     assert results[0].header_text is None
     assert results[0].suggestion_id is None

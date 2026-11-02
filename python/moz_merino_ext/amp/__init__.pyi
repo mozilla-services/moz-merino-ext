@@ -10,6 +10,7 @@ class PyAmpResult:
     serp_categories: list[int]
     icon: str
     full_keyword: str
+    score: float | None
     header_text: str | None
     suggestion_id: str | None
     top_pick_prefix: str | None
@@ -26,6 +27,7 @@ class PyAmpResult:
                  serp_categories: list[int],
                  icon: str,
                  full_keyword: str,
+                 score: float | None = None,
                  header_text: str | None = None,
                  suggestion_id: str | None = None,
                  top_pick_prefix: str | None = None,
@@ -50,6 +52,8 @@ class PyAmpResult:
     def icon(self) -> str: ...
     @property
     def full_keyword(self) -> str: ...
+    @property
+    def score(self) -> float | None: ...
     @property
     def header_text(self) -> str | None: ...
     @property
