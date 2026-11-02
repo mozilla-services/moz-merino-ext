@@ -1,3 +1,14 @@
+<a name="0.4.0"></a>
+## 0.4.0 (2026-11-02)
+
+### Features
+
+* Add `score` field to AMP suggestions
+
+### Maintenance
+
+* Add test coverage for a `null` `top_pick_prefix` from MARS
+
 <a name="0.3.3"></a>
 ## 0.3.3 (2026-07-24)
 
